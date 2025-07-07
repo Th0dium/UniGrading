@@ -23,7 +23,25 @@ pub mod UniGrading {
         });
         Ok(())
     }
+
+    pub fn assign_grade(ctx: Context<AssignGrade>, student: Pubkey, grade: u8) -> ProgramResult {
+        let classroom = &mut ctx.accounts.classroom;
+        let student_account = &mut ctx.accounts.student;
+
+        if !classroom.students.contains(&student) {
+            return Err(ErrorCode::StudentNotInClassroom.into());
+        }
+
+        student_account.grade = grade;
+        Ok(())
+    }
+    pub fn register(ctx: Context<Authority>) -> ProgramResult {
+    let authority = ctx.accounts.authority.key();
+    // Lưu trữ thông tin người dùng
+    Ok(())
 }
+}
+
 
 #[derive(Accounts)]
 pub struct InitializeClassroom<'info> {
@@ -44,6 +62,23 @@ pub struct AddStudent<'info> {
     pub authority: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
+    #[derive(Accounts)]
+pub struct AssignGrade<'info> {
+    #[account(mut)]
+    pub classroom: Account<'info, Classroom>,
+    #[account(mut)]
+    pub student: Account<'info, Student>,
+}
+    #[derive(Accounts)]
+pub struct Authority<'info> {
+    pub authority: Signer<'info>,
+}
+
+#[derive(Debug)]
+pub struct User {
+    pub authority: Pubkey,
+    pub username: String,
+}
 
 #[account]
 pub struct Classroom {
@@ -60,4 +95,22 @@ pub struct Classroom {
     class: String,
     course: String,
     faculty: String,
+}
+
+pub struct Users {
+    pub users: Vec<User>,
+}
+
+impl Users {
+    pub fn new() -> Self {
+        Users { users: Vec::new() }
+    }
+
+    pub fn add_user(&mut self, user: User) {
+        self.users.push(user);
+    }
+
+    pub fn get_user(&self, authority: Pubkey) -> Option<&User> {
+        self.users.iter().find(|user| user.authority == authority)
+    }
 }
