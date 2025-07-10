@@ -1,10 +1,9 @@
 use anchor_lang::prelude::*;
-use anchor_spl::clock::Clock;
 
-declare_id!("7YMxc1rseKi3AQuUvHX2coCv2kUEBNobj3oBWTcyF8k6");
+declare_id!("3D6Ap5VnrXHCNBek628nqw295z4gza49tFdUcoxdvTJw");
 
 #[program]
-pub mod UniGrading {
+pub mod uni_grading {
     use super::*;
 
     pub fn initialize_classroom(
@@ -14,7 +13,6 @@ pub mod UniGrading {
     ) -> Result<()> {
         require!(!classroom_name.is_empty(), UniGradingError::InvalidUsername);
         require!(!course.is_empty(), UniGradingError::InvalidUsername);
-
         // Verify teacher role if user account is provided
         if let Some(user_account) = &ctx.accounts.teacher_user {
             require!(user_account.role == UserRole::Teacher, UniGradingError::OnlyTeachers);
@@ -112,7 +110,7 @@ pub mod UniGrading {
             if existing_grade.assignment_name == assignment_name {
                 existing_grade.grade = grade;
                 existing_grade.max_grade = max_grade;
-                existing_grade.timestamp = Clock::get()?.unix_timestamp;
+                existing_grade.timestamp = ctx.accounts.clock.unix_timestamp;
                 existing_grade.graded_by = ctx.accounts.teacher.key();
                 found = true;
                 break;
@@ -125,7 +123,7 @@ pub mod UniGrading {
                 assignment_name,
                 grade,
                 max_grade,
-                timestamp: Clock::get()?.unix_timestamp,
+                timestamp: ctx.accounts.clock.unix_timestamp,
                 graded_by: ctx.accounts.teacher.key(),
             };
             student.grades.push(grade_entry);
@@ -172,7 +170,7 @@ pub mod UniGrading {
         user.authority = ctx.accounts.authority.key();
         user.username = username;
         user.role = role;
-        user.created_at = Clock::get()?.unix_timestamp;
+        user.created_at = ctx.accounts.clock.unix_timestamp;
         user.is_active = true;
         Ok(())
     }
@@ -267,6 +265,7 @@ pub struct AssignGrade<'info> {
     pub teacher: Signer<'info>,
     /// Optional: Teacher user account for role verification
     pub teacher_user: Option<Account<'info, User>>,
+    pub clock: Sysvar<'info, Clock>,
 }
 
 #[derive(Accounts)]
@@ -295,6 +294,7 @@ pub struct RegisterUser<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
     pub system_program: Program<'info, System>,
+    pub clock: Sysvar<'info, Clock>,
 }
 
 #[derive(Accounts)]
