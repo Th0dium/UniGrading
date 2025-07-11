@@ -6,11 +6,12 @@ import { useUniGrading } from '../hooks/useUniGrading'
 import { AccountInfoTable, ProgramVariablesTable } from './AccountInfoTable'
 import { TransactionHistory, mockTransactions } from './TransactionHistory'
 import { ProgramStateMonitor } from './ProgramStateMonitor'
+import { UsersList } from './UsersList'
 
 export function DebugDashboard() {
   const { publicKey, connected } = useWallet()
   const { currentUser, loading } = useUniGrading()
-  const [activeTab, setActiveTab] = useState<'accounts' | 'variables' | 'program' | 'transactions'>('accounts')
+  const [activeTab, setActiveTab] = useState<'accounts' | 'variables' | 'program' | 'transactions' | 'users'>('accounts')
 
   // Mock account data - in real app, this would come from blockchain
   const mockAccounts = [
@@ -93,7 +94,7 @@ export function DebugDashboard() {
         {
           name: 'name',
           type: 'String',
-          value: 'Alice Johnson',
+          value: 'No students enrolled',
           description: 'Student full name'
         },
         {
@@ -191,7 +192,8 @@ export function DebugDashboard() {
     { id: 'accounts', label: 'Account Data', icon: '🏦' },
     { id: 'variables', label: 'Program Variables', icon: '📊' },
     { id: 'program', label: 'Program Info', icon: '⚙️' },
-    { id: 'transactions', label: 'Transaction History', icon: '📜' }
+    { id: 'transactions', label: 'Transaction History', icon: '📜' },
+    { id: 'users', label: 'Users & Classes', icon: '👥' }
   ]
 
   return (
@@ -205,7 +207,7 @@ export function DebugDashboard() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as 'accounts' | 'variables' | 'program' | 'transactions')}
+                onClick={() => setActiveTab(tab.id as 'accounts' | 'variables' | 'program' | 'transactions' | 'users')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
                     ? 'border-primary-500 text-primary-600'
@@ -300,6 +302,10 @@ export function DebugDashboard() {
 
           {activeTab === 'transactions' && (
             <TransactionHistory transactions={mockTransactions} />
+          )}
+
+          {activeTab === 'users' && (
+            <UsersList />
           )}
         </div>
       </div>

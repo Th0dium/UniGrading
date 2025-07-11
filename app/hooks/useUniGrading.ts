@@ -73,7 +73,7 @@ export const useUniGrading = () => {
     }
   }, [wallet.connected, wallet.publicKey, currentUser]);
 
-  // Register user (Mock implementation for testing)
+  // Register user with localStorage persistence
   const registerUser = useCallback(async (
     username: string,
     role: 'Teacher' | 'Student'
@@ -84,11 +84,18 @@ export const useUniGrading = () => {
 
     setLoading(true);
     try {
+      // Check if user already exists
+      const existingUser = localStorage.getItem(`user_${wallet.publicKey.toString()}`);
+      if (existingUser) {
+        toast.error('User already registered with this wallet');
+        return null;
+      }
+
       // Mock delay to simulate transaction
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Create mock user data
-      const mockUser: User = {
+      // Create user data
+      const userData: User = {
         authority: wallet.publicKey,
         username,
         role,
@@ -96,11 +103,25 @@ export const useUniGrading = () => {
         isActive: true,
       };
 
-      setCurrentUser(mockUser);
-      toast.success('User registered successfully! (Mock)');
+      // Save to localStorage
+      localStorage.setItem(`user_${wallet.publicKey.toString()}`, JSON.stringify(userData));
+
+      // Add to global users list
+      const allUsers = JSON.parse(localStorage.getItem('all_users') || '[]');
+      allUsers.push({
+        walletAddress: wallet.publicKey.toString(),
+        username,
+        role,
+        createdAt: userData.createdAt,
+        isActive: true,
+      });
+      localStorage.setItem('all_users', JSON.stringify(allUsers));
+
+      setCurrentUser(userData);
+      toast.success('User registered successfully!');
 
       // Return mock transaction signature
-      return 'mock_signature_' + Date.now();
+      return 'tx_' + Date.now() + '_' + wallet.publicKey.toString().slice(0, 8);
     } catch (error) {
       console.error('Error registering user:', error);
       toast.error(`Failed to register user: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -110,7 +131,7 @@ export const useUniGrading = () => {
     }
   }, [wallet]);
 
-  // Create classroom (Mock implementation)
+  // Create classroom with localStorage persistence
   const createClassroom = useCallback(async (
     classroomName: string,
     course: string
@@ -128,8 +149,25 @@ export const useUniGrading = () => {
       // Mock delay
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      toast.success(`Classroom "${classroomName}" created successfully! (Mock)`);
-      return 'mock_classroom_signature_' + Date.now();
+      // Create classroom data
+      const classroomData = {
+        id: 'class_' + Date.now(),
+        name: classroomName,
+        course,
+        teacher: wallet.publicKey.toString(),
+        teacherName: currentUser.username,
+        students: [],
+        createdAt: Date.now() / 1000,
+        isActive: true,
+      };
+
+      // Save to localStorage
+      const allClassrooms = JSON.parse(localStorage.getItem('all_classrooms') || '[]');
+      allClassrooms.push(classroomData);
+      localStorage.setItem('all_classrooms', JSON.stringify(allClassrooms));
+
+      toast.success(`Classroom "${classroomName}" created successfully!`);
+      return 'tx_classroom_' + Date.now() + '_' + wallet.publicKey.toString().slice(0, 8);
     } catch (error) {
       console.error('Error creating classroom:', error);
       toast.error('Failed to create classroom');

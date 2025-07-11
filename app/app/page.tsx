@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { Dashboard } from '@/components/Dashboard'
 import { UserRegistration } from '@/components/UserRegistration'
 import { WalletButton } from '@/components/WalletButton'
+import { RegistrationDebug } from '@/components/RegistrationDebug'
 import NoSSR from '@/components/NoSSR'
 
 export default function Home() {
@@ -71,6 +72,7 @@ function HomeContent() {
           </div>
           <UserRegistration onRegistrationComplete={handleRegistrationComplete} />
         </div>
+        <RegistrationDebug />
       </div>
     )
   }
