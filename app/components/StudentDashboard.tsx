@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useUniGrading } from '../hooks/useUniGrading'
 
 interface Grade {
   assignmentName: string
@@ -11,6 +12,7 @@ interface Grade {
 }
 
 export function StudentDashboard() {
+  const { loading, currentUser } = useUniGrading()
   const [grades, setGrades] = useState<Grade[]>([])
   const [isLoading, setIsLoading] = useState(true)
 

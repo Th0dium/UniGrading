@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import { useUniGrading } from '../hooks/useUniGrading'
+import { PublicKey } from '@solana/web3.js'
 
 interface Student {
   id: string
@@ -17,6 +19,7 @@ interface Grade {
 }
 
 export function GradeManager() {
+  const { assignGrade, loading } = useUniGrading()
   const [selectedClassroom, setSelectedClassroom] = useState('')
   const [students, setStudents] = useState<Student[]>([
     // Mock data
@@ -29,7 +32,6 @@ export function GradeManager() {
     grade: '',
     maxGrade: '100'
   })
-  const [isLoading, setIsLoading] = useState(false)
 
   const classrooms = [
     { id: '1', name: 'Math 101' },
@@ -50,18 +52,28 @@ export function GradeManager() {
       return
     }
 
-    setIsLoading(true)
     try {
-      // Here you would call the Solana program to assign grade
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      toast.success('Grade assigned successfully!')
+      const selectedStudentData = students.find(s => s.id === selectedStudent)
+      if (!selectedStudentData) {
+        toast.error('Student not found')
+        return
+      }
+
+      // Convert pubkey string to PublicKey
+      const studentPubkey = new PublicKey(selectedStudentData.pubkey)
+
+      await assignGrade(
+        studentPubkey,
+        gradeForm.assignmentName,
+        grade,
+        maxGrade
+      )
+
       setGradeForm({ assignmentName: '', grade: '', maxGrade: '100' })
       setSelectedStudent('')
     } catch (error) {
+      console.error('Error assigning grade:', error)
       toast.error('Failed to assign grade')
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -168,10 +180,10 @@ export function GradeManager() {
 
                 <button
                   onClick={handleAssignGrade}
-                  disabled={isLoading}
+                  disabled={loading}
                   className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
                 >
-                  {isLoading ? 'Assigning Grade...' : 'Assign Grade'}
+                  {loading ? 'Assigning Grade...' : 'Assign Grade'}
                 </button>
               </div>
             )}

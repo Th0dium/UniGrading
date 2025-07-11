@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import toast from 'react-hot-toast'
+import { useUniGrading } from '../hooks/useUniGrading'
 
 interface UserRegistrationProps {
   onRegistrationComplete: (role: 'teacher' | 'student') => void
@@ -10,9 +11,9 @@ interface UserRegistrationProps {
 
 export function UserRegistration({ onRegistrationComplete }: UserRegistrationProps) {
   const { publicKey } = useWallet()
+  const { registerUser, loading, currentUser } = useUniGrading()
   const [username, setUsername] = useState('')
   const [selectedRole, setSelectedRole] = useState<'teacher' | 'student'>('student')
-  const [isLoading, setIsLoading] = useState(false)
 
   const handleRegister = async () => {
     if (!publicKey) {
@@ -25,20 +26,14 @@ export function UserRegistration({ onRegistrationComplete }: UserRegistrationPro
       return
     }
 
-    setIsLoading(true)
-    
     try {
-      // Here you would call the Solana program to register the user
-      // For now, we'll simulate the registration
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      toast.success('Registration successful!')
+      // Convert role to match the hook's expected format
+      const role = selectedRole === 'teacher' ? 'Teacher' : 'Student'
+      await registerUser(username, role)
       onRegistrationComplete(selectedRole)
     } catch (error) {
       console.error('Registration error:', error)
       toast.error('Registration failed. Please try again.')
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -96,10 +91,10 @@ export function UserRegistration({ onRegistrationComplete }: UserRegistrationPro
 
         <button
           onClick={handleRegister}
-          disabled={isLoading || !username.trim()}
+          disabled={loading || !username.trim()}
           className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
         >
-          {isLoading ? 'Registering...' : 'Register'}
+          {loading ? 'Registering...' : 'Register'}
         </button>
       </div>
 
