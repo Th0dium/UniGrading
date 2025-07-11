@@ -17,34 +17,40 @@ export function StudentDashboard() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Simulate loading grades from blockchain
+    // Load real grades from localStorage
     const loadGrades = async () => {
       setIsLoading(true)
-      // In a real app, you'd fetch grades from the Solana program
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Mock data
-      setGrades([
-        {
-          assignmentName: 'Midterm Exam',
-          grade: 85,
-          maxGrade: 100,
-          timestamp: Date.now() - 86400000,
-          gradedBy: 'Prof. Smith'
-        },
-        {
-          assignmentName: 'Quiz 1',
-          grade: 92,
-          maxGrade: 100,
-          timestamp: Date.now() - 172800000,
-          gradedBy: 'Prof. Smith'
-        }
-      ])
+      // Small delay for UX
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      if (currentUser) {
+        // Get grades for current user from localStorage
+        const allGrades = JSON.parse(localStorage.getItem('all_grades') || '[]')
+        const userGrades = allGrades
+          .filter((grade: any) => grade.studentWallet === currentUser.authority.toString())
+          .map((grade: any) => ({
+            assignmentName: grade.assignmentName,
+            grade: grade.grade,
+            maxGrade: grade.maxGrade,
+            timestamp: grade.timestamp,
+            gradedBy: grade.teacherName
+          }))
+          .sort((a: any, b: any) => b.timestamp - a.timestamp) // Sort by newest first
+
+        setGrades(userGrades)
+      } else {
+        setGrades([])
+      }
+
       setIsLoading(false)
     }
 
     loadGrades()
-  }, [])
+
+    // Refresh grades every 10 seconds to get real-time updates
+    const interval = setInterval(loadGrades, 10000)
+    return () => clearInterval(interval)
+  }, [currentUser])
 
   const calculateAverage = () => {
     if (grades.length === 0) return 0

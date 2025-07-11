@@ -54,9 +54,9 @@ export function UsersList() {
   )
 
   const tabs = [
-    { id: 'students', label: 'Students', count: filteredStudents.length, icon: '🎓' },
-    { id: 'teachers', label: 'Teachers', count: filteredTeachers.length, icon: '👨‍🏫' },
-    { id: 'classes', label: 'Classes', count: filteredClassrooms.length, icon: '🏫' }
+    { id: 'students', label: 'Students', count: filteredStudents.length, icon: 'STU' },
+    { id: 'teachers', label: 'Teachers', count: filteredTeachers.length, icon: 'TCH' },
+    { id: 'classes', label: 'Classes', count: filteredClassrooms.length, icon: 'CLS' }
   ]
 
   return (

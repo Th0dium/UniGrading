@@ -32,19 +32,31 @@ export function ProgramStateMonitor() {
     setMounted(true)
   }, [])
 
-  // Simulate fetching program state
+  // Fetch real program state from localStorage
   const fetchProgramState = async () => {
     setIsRefreshing(true)
     try {
-      // In a real app, this would fetch from the blockchain
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      // Small delay for UX
+      await new Promise(resolve => setTimeout(resolve, 300))
+
+      // Get real data from localStorage
+      const allUsers = JSON.parse(localStorage.getItem('all_users') || '[]')
+      const allClassrooms = JSON.parse(localStorage.getItem('all_classrooms') || '[]')
+      const allGrades = JSON.parse(localStorage.getItem('all_grades') || '[]')
+
+      // Calculate real statistics
+      const totalUsers = allUsers.length
+      const totalClassrooms = allClassrooms.length
+      const totalStudents = allUsers.filter((user: any) => user.role === 'Student').length
+      const totalGrades = allGrades.length
+      const activeConnections = connected ? 1 : 0
+
       setProgramState({
-        totalUsers: Math.floor(Math.random() * 100) + 50,
-        totalClassrooms: Math.floor(Math.random() * 20) + 10,
-        totalStudents: Math.floor(Math.random() * 500) + 200,
-        totalGrades: Math.floor(Math.random() * 2000) + 1000,
-        activeConnections: Math.floor(Math.random() * 10) + 5,
+        totalUsers,
+        totalClassrooms,
+        totalStudents,
+        totalGrades,
+        activeConnections,
         lastUpdate: Date.now()
       })
     } catch (error) {
@@ -65,37 +77,37 @@ export function ProgramStateMonitor() {
     {
       name: 'Total Users',
       value: programState.totalUsers,
-      icon: '👥',
+      icon: 'Users',
       color: 'text-blue-600',
       bgColor: 'bg-blue-100'
     },
     {
-      name: 'Total Classrooms',
+      name: 'Classrooms',
       value: programState.totalClassrooms,
-      icon: '🏫',
+      icon: 'Class',
       color: 'text-green-600',
       bgColor: 'bg-green-100'
     },
     {
-      name: 'Total Students',
+      name: 'Students',
       value: programState.totalStudents,
-      icon: '🎓',
+      icon: 'Student',
       color: 'text-purple-600',
       bgColor: 'bg-purple-100'
     },
     {
-      name: 'Total Grades',
-      value: programState.totalGrades,
-      icon: '📊',
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100'
+      name: 'Teachers',
+      value: programState.totalUsers - programState.totalStudents,
+      icon: 'Teacher',
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-100'
     },
     {
-      name: 'Active Connections',
-      value: programState.activeConnections,
-      icon: '🔗',
-      color: 'text-red-600',
-      bgColor: 'bg-red-100'
+      name: 'Grades Recorded',
+      value: programState.totalGrades,
+      icon: 'Grade',
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-100'
     }
   ]
 
@@ -156,7 +168,7 @@ export function ProgramStateMonitor() {
           <div key={index} className="bg-gray-50 rounded-lg p-4">
             <div className="flex items-center">
               <div className={`flex-shrink-0 ${stat.bgColor} rounded-lg p-2`}>
-                <span className="text-lg">{stat.icon}</span>
+                <span className={`text-xs font-medium ${stat.color}`}>{stat.icon}</span>
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-500">{stat.name}</p>

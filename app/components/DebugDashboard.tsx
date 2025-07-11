@@ -189,11 +189,11 @@ export function DebugDashboard() {
   ]
 
   const tabs = [
-    { id: 'accounts', label: 'Account Data', icon: '🏦' },
-    { id: 'variables', label: 'Program Variables', icon: '📊' },
-    { id: 'program', label: 'Program Info', icon: '⚙️' },
-    { id: 'transactions', label: 'Transaction History', icon: '📜' },
-    { id: 'users', label: 'Users & Classes', icon: '👥' }
+    { id: 'accounts', label: 'Account Data', icon: 'ACC' },
+    { id: 'variables', label: 'Program Variables', icon: 'VAR' },
+    { id: 'program', label: 'Program Info', icon: 'PRG' },
+    { id: 'transactions', label: 'Transaction History', icon: 'TXN' },
+    { id: 'users', label: 'Users & Classes', icon: 'USR' }
   ]
 
   return (
@@ -214,7 +214,7 @@ export function DebugDashboard() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <span className="mr-2">{tab.icon}</span>
+                <span className="mr-2 text-xs font-mono bg-gray-200 px-1 rounded">{tab.icon}</span>
                 {tab.label}
               </button>
             ))}

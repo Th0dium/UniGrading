@@ -28,11 +28,17 @@ export function GradeManager() {
     grade: '',
     maxGrade: '100'
   })
+  const [classrooms, setClassrooms] = useState<any[]>([])
 
-  const classrooms = [
-    { id: '1', name: 'Math 101' },
-    { id: '2', name: 'Physics 201' }
-  ]
+  // Load classrooms from localStorage
+  useEffect(() => {
+    const loadClassrooms = () => {
+      const allClassrooms = JSON.parse(localStorage.getItem('all_classrooms') || '[]')
+      setClassrooms(allClassrooms)
+    }
+
+    loadClassrooms()
+  }, [])
 
   const handleAssignGrade = async () => {
     if (!selectedStudent || !gradeForm.assignmentName || !gradeForm.grade) {
