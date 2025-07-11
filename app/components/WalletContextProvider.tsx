@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect, useState } from 'react'
 import {
   ConnectionProvider,
   WalletProvider,
@@ -23,6 +23,8 @@ export function WalletContextProvider({
 }: {
   children: React.ReactNode
 }) {
+  const [mounted, setMounted] = useState(false)
+
   // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'
   const network = WalletAdapterNetwork.Devnet
 
@@ -36,6 +38,20 @@ export function WalletContextProvider({
     ],
     []
   )
+
+  // Fix hydration error
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Show loading state during hydration
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+      </div>
+    )
+  }
 
   return (
     <ConnectionProvider endpoint={endpoint}>

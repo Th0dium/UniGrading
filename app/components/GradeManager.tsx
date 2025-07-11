@@ -21,11 +21,7 @@ interface Grade {
 export function GradeManager() {
   const { assignGrade, loading } = useUniGrading()
   const [selectedClassroom, setSelectedClassroom] = useState('')
-  const [students, setStudents] = useState<Student[]>([
-    // Mock data
-    { id: 'STU001', name: 'Alice Johnson', pubkey: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU' },
-    { id: 'STU002', name: 'Bob Smith', pubkey: '8yLYtg3DX98e08UKTEqcE6kCifUqB94VZSvKpthBtV' }
-  ])
+  const [students, setStudents] = useState<Student[]>([])
   const [selectedStudent, setSelectedStudent] = useState('')
   const [gradeForm, setGradeForm] = useState({
     assignmentName: '',

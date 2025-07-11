@@ -1,11 +1,7 @@
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { useCallback, useMemo, useState, useEffect } from 'react';
-import { PublicKey, Transaction, SystemProgram, SYSVAR_CLOCK_PUBKEY } from '@solana/web3.js';
-import { Program, AnchorProvider, web3, BN, Idl } from '@project-serum/anchor';
-// import { toast } from 'react-hot-toast';
-
-// Program ID from the Rust code
-const PROGRAM_ID = new PublicKey('AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj');
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useCallback, useState, useEffect } from 'react';
+import { PublicKey } from '@solana/web3.js';
+import toast from 'react-hot-toast';
 
 // Types matching the Rust structs
 export interface User {
@@ -44,122 +40,82 @@ export interface Grade {
 }
 
 export const useUniGrading = () => {
-  const { connection } = useConnection();
   const wallet = useWallet();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const provider = useMemo(() => {
-    if (!wallet.publicKey || !wallet.signTransaction) {
-      return null;
+  // Check for existing user in localStorage when wallet connects
+  useEffect(() => {
+    if (wallet.connected && wallet.publicKey && !currentUser) {
+      const savedUser = localStorage.getItem(`user_${wallet.publicKey.toString()}`);
+      if (savedUser) {
+        setCurrentUser(JSON.parse(savedUser));
+      }
     }
-    
-    return new AnchorProvider(
-      connection,
-      {
-        publicKey: wallet.publicKey,
-        signTransaction: wallet.signTransaction,
-        signAllTransactions: wallet.signAllTransactions || (async (txs) => {
-          const signedTxs = [];
-          for (const tx of txs) {
-            signedTxs.push(await wallet.signTransaction!(tx));
-          }
-          return signedTxs;
-        }),
-      },
-      { commitment: 'confirmed' }
-    );
-  }, [connection, wallet]);
+  }, [wallet.connected, wallet.publicKey, currentUser]);
 
-  // Generate PDA for user account
-  const getUserPDA = useCallback(async (authority: PublicKey): Promise<[PublicKey, number]> => {
-    return await PublicKey.findProgramAddress(
-      [Buffer.from('user'), authority.toBuffer()],
-      PROGRAM_ID
-    );
-  }, []);
-
-  // Check if user is registered
+  // Check if user is registered (Mock implementation)
   const checkUserRegistration = useCallback(async (publicKey?: PublicKey): Promise<User | null> => {
-    if (!provider) return null;
-    
+    if (!wallet.connected) return null;
+
     const userKey = publicKey || wallet.publicKey;
     if (!userKey) return null;
 
     try {
-      const [userPDA] = await getUserPDA(userKey);
-      const accountInfo = await connection.getAccountInfo(userPDA);
-      
-      if (!accountInfo) {
-        return null;
-      }
+      // Mock delay
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      // In a real implementation, you would deserialize the account data
-      // For now, we'll return a mock user
-      return {
-        authority: userKey,
-        username: 'Mock User',
-        role: 'Student',
-        createdAt: Date.now(),
-        isActive: true,
-      };
+      // Return current user if exists, otherwise null
+      return currentUser;
     } catch (error) {
       console.error('Error checking user registration:', error);
       return null;
     }
-  }, [provider, wallet.publicKey, getUserPDA, connection]);
+  }, [wallet.connected, wallet.publicKey, currentUser]);
 
-  // Register user
+  // Register user (Mock implementation for testing)
   const registerUser = useCallback(async (
     username: string,
     role: 'Teacher' | 'Student'
   ): Promise<string | null> => {
-    if (!provider || !wallet.publicKey || !wallet.signTransaction) {
+    if (!wallet.connected || !wallet.publicKey) {
       throw new Error('Wallet not connected');
     }
 
     setLoading(true);
     try {
-      const [userPDA] = await getUserPDA(wallet.publicKey);
-      
-      // Create instruction manually since we don't have the IDL
-      const instruction = new web3.TransactionInstruction({
-        keys: [
-          { pubkey: userPDA, isSigner: false, isWritable: true },
-          { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
-          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-          { pubkey: SYSVAR_CLOCK_PUBKEY, isSigner: false, isWritable: false },
-        ],
-        programId: PROGRAM_ID,
-        data: Buffer.from([]), // In real implementation, serialize the instruction data
-      });
+      // Mock delay to simulate transaction
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      const transaction = new Transaction().add(instruction);
-      const signature = await wallet.sendTransaction(transaction, connection);
-      await connection.confirmTransaction(signature, 'confirmed');
-      
-      toast.success('User registered successfully!');
-      
-      // Refresh user data
-      const user = await checkUserRegistration();
-      setCurrentUser(user);
-      
-      return signature;
+      // Create mock user data
+      const mockUser: User = {
+        authority: wallet.publicKey,
+        username,
+        role,
+        createdAt: Date.now() / 1000,
+        isActive: true,
+      };
+
+      setCurrentUser(mockUser);
+      toast.success('User registered successfully! (Mock)');
+
+      // Return mock transaction signature
+      return 'mock_signature_' + Date.now();
     } catch (error) {
       console.error('Error registering user:', error);
-      toast.error('Failed to register user');
+      toast.error(`Failed to register user: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     } finally {
       setLoading(false);
     }
-  }, [provider, wallet, connection, getUserPDA, checkUserRegistration]);
+  }, [wallet]);
 
-  // Create classroom (for teachers)
+  // Create classroom (Mock implementation)
   const createClassroom = useCallback(async (
     classroomName: string,
     course: string
   ): Promise<string | null> => {
-    if (!provider || !wallet.publicKey || !wallet.signTransaction) {
+    if (!wallet.connected || !wallet.publicKey) {
       throw new Error('Wallet not connected');
     }
 
@@ -169,29 +125,11 @@ export const useUniGrading = () => {
 
     setLoading(true);
     try {
-      // Generate a new keypair for the classroom
-      const classroomKeypair = web3.Keypair.generate();
-      const [userPDA] = await getUserPDA(wallet.publicKey);
-      
-      const instruction = new web3.TransactionInstruction({
-        keys: [
-          { pubkey: classroomKeypair.publicKey, isSigner: false, isWritable: true },
-          { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
-          { pubkey: userPDA, isSigner: false, isWritable: false },
-          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-        ],
-        programId: PROGRAM_ID,
-        data: Buffer.from([]), // Serialize instruction data
-      });
+      // Mock delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      const transaction = new Transaction().add(instruction);
-      const signature = await wallet.sendTransaction(transaction, connection, {
-        signers: [classroomKeypair]
-      });
-      await connection.confirmTransaction(signature, 'confirmed');
-      
-      toast.success('Classroom created successfully!');
-      return signature;
+      toast.success(`Classroom "${classroomName}" created successfully! (Mock)`);
+      return 'mock_classroom_signature_' + Date.now();
     } catch (error) {
       console.error('Error creating classroom:', error);
       toast.error('Failed to create classroom');
@@ -199,15 +137,15 @@ export const useUniGrading = () => {
     } finally {
       setLoading(false);
     }
-  }, [provider, wallet, connection, currentUser, getUserPDA]);
+  }, [wallet, currentUser]);
 
-  // Add student to classroom
+  // Add student to classroom (Mock implementation)
   const addStudent = useCallback(async (
     classroomPubkey: PublicKey,
     studentName: string,
     studentId: string
   ): Promise<string | null> => {
-    if (!provider || !wallet.publicKey || !wallet.signTransaction) {
+    if (!wallet.connected || !wallet.publicKey) {
       throw new Error('Wallet not connected');
     }
 
@@ -217,27 +155,11 @@ export const useUniGrading = () => {
 
     setLoading(true);
     try {
-      const studentKeypair = web3.Keypair.generate();
-      
-      const instruction = new web3.TransactionInstruction({
-        keys: [
-          { pubkey: classroomPubkey, isSigner: false, isWritable: true },
-          { pubkey: studentKeypair.publicKey, isSigner: false, isWritable: true },
-          { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
-          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-        ],
-        programId: PROGRAM_ID,
-        data: Buffer.from([]), // Serialize instruction data
-      });
+      // Mock delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const transaction = new Transaction().add(instruction);
-      const signature = await wallet.sendTransaction(transaction, connection, {
-        signers: [studentKeypair]
-      });
-      await connection.confirmTransaction(signature, 'confirmed');
-      
-      toast.success('Student added successfully!');
-      return signature;
+      toast.success(`Student "${studentName}" (${studentId}) added successfully! (Mock)`);
+      return 'mock_student_signature_' + Date.now();
     } catch (error) {
       console.error('Error adding student:', error);
       toast.error('Failed to add student');
@@ -245,16 +167,16 @@ export const useUniGrading = () => {
     } finally {
       setLoading(false);
     }
-  }, [provider, wallet, connection, currentUser]);
+  }, [wallet, currentUser]);
 
-  // Assign grade
+  // Assign grade (Mock implementation)
   const assignGrade = useCallback(async (
     studentPubkey: PublicKey,
     assignmentName: string,
     grade: number,
     maxGrade: number
   ): Promise<string | null> => {
-    if (!provider || !wallet.publicKey || !wallet.signTransaction) {
+    if (!wallet.connected || !wallet.publicKey) {
       throw new Error('Wallet not connected');
     }
 
@@ -264,25 +186,11 @@ export const useUniGrading = () => {
 
     setLoading(true);
     try {
-      const [userPDA] = await getUserPDA(wallet.publicKey);
-      
-      const instruction = new web3.TransactionInstruction({
-        keys: [
-          { pubkey: studentPubkey, isSigner: false, isWritable: true },
-          { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
-          { pubkey: userPDA, isSigner: false, isWritable: false },
-          { pubkey: SYSVAR_CLOCK_PUBKEY, isSigner: false, isWritable: false },
-        ],
-        programId: PROGRAM_ID,
-        data: Buffer.from([]), // Serialize instruction data
-      });
+      // Mock delay
+      await new Promise(resolve => setTimeout(resolve, 1200));
 
-      const transaction = new Transaction().add(instruction);
-      const signature = await wallet.sendTransaction(transaction, connection);
-      await connection.confirmTransaction(signature, 'confirmed');
-      
-      toast.success('Grade assigned successfully!');
-      return signature;
+      toast.success(`Grade assigned: ${grade}/${maxGrade} for "${assignmentName}" (Mock)`);
+      return 'mock_grade_signature_' + Date.now();
     } catch (error) {
       console.error('Error assigning grade:', error);
       toast.error('Failed to assign grade');
@@ -290,7 +198,7 @@ export const useUniGrading = () => {
     } finally {
       setLoading(false);
     }
-  }, [provider, wallet, connection, currentUser, getUserPDA]);
+  }, [wallet, currentUser]);
 
   // Load user data on wallet connection
   useEffect(() => {

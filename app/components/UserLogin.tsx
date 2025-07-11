@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import toast from 'react-hot-toast'
 import { useUniGrading } from '../hooks/useUniGrading'
+import { WalletButton } from './WalletButton'
 
 interface UserLoginProps {
   onLoginSuccess: (user: any) => void
@@ -15,6 +15,12 @@ export function UserLogin({ onLoginSuccess, onNeedRegistration }: UserLoginProps
   const { connected, publicKey } = useWallet()
   const { currentUser, checkUserRegistration, loading } = useUniGrading()
   const [isChecking, setIsChecking] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  // Fix hydration error
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Check user registration when wallet connects
   useEffect(() => {
@@ -73,6 +79,21 @@ export function UserLogin({ onLoginSuccess, onNeedRegistration }: UserLoginProps
     }
   }
 
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-3/4 mx-auto mb-6"></div>
+          <div className="space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-full"></div>
+            <div className="h-10 bg-gray-200 rounded w-full"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
       <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
@@ -85,7 +106,7 @@ export function UserLogin({ onLoginSuccess, onNeedRegistration }: UserLoginProps
           <p className="text-sm text-gray-600 mb-4">
             Connect your Solana wallet to access your account
           </p>
-          <WalletMultiButton className="!bg-primary-600 hover:!bg-primary-700" />
+          <WalletButton />
         </div>
 
         {/* Connection Status */}

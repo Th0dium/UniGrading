@@ -1,12 +1,21 @@
 'use client'
 
 import { useWallet } from '@solana/wallet-adapter-react'
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { useState, useEffect } from 'react'
 import { Dashboard } from '@/components/Dashboard'
 import { UserRegistration } from '@/components/UserRegistration'
+import { WalletButton } from '@/components/WalletButton'
+import NoSSR from '@/components/NoSSR'
 
 export default function Home() {
+  return (
+    <NoSSR>
+      <HomeContent />
+    </NoSSR>
+  )
+}
+
+function HomeContent() {
   const { connected, publicKey } = useWallet()
   const [isRegistered, setIsRegistered] = useState(false)
   const [userRole, setUserRole] = useState<'teacher' | 'student' | null>(null)
@@ -46,7 +55,7 @@ export default function Home() {
           <p className="text-gray-500 mb-8">
             Connect your Solana wallet to get started
           </p>
-          <WalletMultiButton />
+          <WalletButton />
         </div>
       </div>
     )
@@ -58,7 +67,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900">UniGrading</h1>
-            <WalletMultiButton />
+            <WalletButton />
           </div>
           <UserRegistration onRegistrationComplete={handleRegistrationComplete} />
         </div>
@@ -71,7 +80,7 @@ export default function Home() {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">UniGrading Dashboard</h1>
-          <WalletMultiButton />
+          <WalletButton />
         </div>
         <Dashboard userRole={userRole} />
       </div>
