@@ -3,7 +3,7 @@
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useState, useEffect } from 'react'
 import { Dashboard } from '@/components/Dashboard'
-import { UserRegistration } from '@/components/UserRegistration'
+import { AuthPage } from '@/components/AuthPage'
 import { WalletButton } from '@/components/WalletButton'
 import { RegistrationDebug } from '@/components/RegistrationDebug'
 import NoSSR from '@/components/NoSSR'
@@ -32,10 +32,18 @@ function HomeContent() {
   }, [connected, publicKey])
 
   const checkUserRegistration = async () => {
-    // Simulate checking user registration
-    // In a real implementation, you'd query the Solana program
-    // For demo purposes, we'll assume user needs to register first
-    setIsRegistered(false)
+    if (!publicKey) return
+
+    // Check if user exists in localStorage
+    const savedUser = localStorage.getItem(`user_${publicKey.toString()}`)
+    if (savedUser) {
+      const userData = JSON.parse(savedUser)
+      setIsRegistered(true)
+      setUserRole(userData.role.toLowerCase() as 'teacher' | 'student')
+    } else {
+      setIsRegistered(false)
+      setUserRole(null)
+    }
   }
 
   const handleRegistrationComplete = (role: 'teacher' | 'student') => {
@@ -47,9 +55,14 @@ function HomeContent() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
             UniGrading
           </h1>
+          <div className="flex items-center justify-center mb-6">
+            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+              v1.1
+            </span>
+          </div>
           <p className="text-xl text-gray-600 mb-8">
             Decentralized University Grading System
           </p>
@@ -70,7 +83,7 @@ function HomeContent() {
             <h1 className="text-3xl font-bold text-gray-900">UniGrading</h1>
             <WalletButton />
           </div>
-          <UserRegistration onRegistrationComplete={handleRegistrationComplete} />
+          <AuthPage onAuthComplete={handleRegistrationComplete} />
         </div>
         <RegistrationDebug />
       </div>

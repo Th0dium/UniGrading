@@ -7,8 +7,8 @@ import { Toaster } from 'react-hot-toast'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'UniGrading - Blockchain Grade Management',
-  description: 'Decentralized university grading system on Solana',
+  title: 'UniGrading v1.1 - Blockchain Grade Management',
+  description: 'Decentralized university grading system on Solana - Version 1.1 with Login/Register functionality',
 }
 
 export default function RootLayout({
@@ -20,8 +20,25 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <WalletContextProvider>
-          <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-            {children}
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+            <div className="flex-1">
+              {children}
+            </div>
+
+            {/* Footer */}
+            <footer className="bg-white border-t border-gray-200 py-4 px-6">
+              <div className="max-w-6xl mx-auto flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">UniGrading</span> - Decentralized University Grading System
+                </div>
+                <div className="text-sm text-gray-500">
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                    v1.1
+                  </span>
+                  <span className="ml-2">Built on Solana</span>
+                </div>
+              </div>
+            </footer>
           </div>
           <Toaster position="top-right" />
         </WalletContextProvider>

@@ -157,6 +157,13 @@ export function DebugDashboard() {
       value: loading,
       scope: 'Local' as const,
       description: 'Whether any blockchain operation is in progress'
+    },
+    {
+      name: 'app_version',
+      type: 'string',
+      value: 'v1.1',
+      scope: 'Global' as const,
+      description: 'UniGrading application version'
     }
   ]
 
