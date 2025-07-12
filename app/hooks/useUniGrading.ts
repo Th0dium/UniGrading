@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 export interface User {
   authority: PublicKey;
   username: string;
-  role: 'Teacher' | 'Student';
+  role: 'Teacher' | 'Student' | 'Admin';
   createdAt: number;
   isActive: boolean;
 }
@@ -76,7 +76,7 @@ export const useUniGrading = () => {
   // Register user with localStorage persistence
   const registerUser = useCallback(async (
     username: string,
-    role: 'Teacher' | 'Student'
+    role: 'Teacher' | 'Student' | 'Admin'
   ): Promise<string | null> => {
     if (!wallet.connected || !wallet.publicKey) {
       throw new Error('Wallet not connected');

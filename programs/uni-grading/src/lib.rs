@@ -353,6 +353,7 @@ pub struct Grade {
 pub enum UserRole {
     Teacher,
     Student,
+    Admin,
 }
 
 #[error_code]

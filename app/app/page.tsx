@@ -20,7 +20,7 @@ export default function Home() {
 function HomeContent() {
   const { connected, publicKey } = useWallet()
   const [isRegistered, setIsRegistered] = useState(false)
-  const [userRole, setUserRole] = useState<'teacher' | 'student' | null>(null)
+  const [userRole, setUserRole] = useState<'teacher' | 'student' | 'admin' | null>(null)
 
   useEffect(() => {
     // Check if user is registered
@@ -40,14 +40,14 @@ function HomeContent() {
     if (savedUser) {
       const userData = JSON.parse(savedUser)
       setIsRegistered(true)
-      setUserRole(userData.role.toLowerCase() as 'teacher' | 'student')
+      setUserRole(userData.role.toLowerCase() as 'teacher' | 'student' | 'admin')
     } else {
       setIsRegistered(false)
       setUserRole(null)
     }
   }
 
-  const handleRegistrationComplete = (role: 'teacher' | 'student') => {
+  const handleRegistrationComplete = (role: 'teacher' | 'student' | 'admin') => {
     setIsRegistered(true)
     setUserRole(role)
   }

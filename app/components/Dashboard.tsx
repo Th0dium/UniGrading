@@ -3,10 +3,12 @@
 import { useState } from 'react'
 import { TeacherDashboard } from './TeacherDashboard'
 import { StudentDashboard } from './StudentDashboard'
+import { AdminDashboard } from './AdminDashboard'
 import { DebugDashboard } from './DebugDashboard'
+import { AdminDashboardRoute } from './AdminRoute'
 
 interface DashboardProps {
-  userRole: 'teacher' | 'student' | null
+  userRole: 'teacher' | 'student' | 'admin' | null
 }
 
 export function Dashboard({ userRole }: DashboardProps) {
@@ -20,7 +22,9 @@ export function Dashboard({ userRole }: DashboardProps) {
     )
   }
 
-  const tabs = [
+  const tabs = userRole === 'admin' ? [
+    { id: 'main', label: 'Admin Dashboard', icon: '⚡' }
+  ] : [
     { id: 'main', label: 'Dashboard', icon: '🏠' },
     { id: 'debug', label: 'Debug Info', icon: '🔧' }
   ]
@@ -64,15 +68,17 @@ export function Dashboard({ userRole }: DashboardProps) {
         <div className="p-6">
           {activeTab === 'main' && (
             <>
-              {userRole === 'teacher' ? (
-                <TeacherDashboard />
-              ) : (
-                <StudentDashboard />
+              {userRole === 'teacher' && <TeacherDashboard />}
+              {userRole === 'student' && <StudentDashboard />}
+              {userRole === 'admin' && (
+                <AdminDashboardRoute>
+                  <AdminDashboard />
+                </AdminDashboardRoute>
               )}
             </>
           )}
 
-          {activeTab === 'debug' && (
+          {activeTab === 'debug' && userRole !== 'admin' && (
             <DebugDashboard />
           )}
         </div>

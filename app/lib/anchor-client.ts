@@ -96,7 +96,8 @@ export const IDL = {
         kind: "enum",
         variants: [
           { name: "Teacher" },
-          { name: "Student" }
+          { name: "Student" },
+          { name: "Admin" }
         ]
       }
     },

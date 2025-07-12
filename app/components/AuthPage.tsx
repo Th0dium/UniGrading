@@ -6,7 +6,7 @@ import { UserRegistration } from './UserRegistration'
 import { UserLogin } from './UserLogin'
 
 interface AuthPageProps {
-  onAuthComplete: (role: 'teacher' | 'student') => void
+  onAuthComplete: (role: 'teacher' | 'student' | 'admin') => void
 }
 
 export function AuthPage({ onAuthComplete }: AuthPageProps) {

@@ -6,14 +6,14 @@ import toast from 'react-hot-toast'
 import { useUniGrading } from '../hooks/useUniGrading'
 
 interface UserRegistrationProps {
-  onRegistrationComplete: (role: 'teacher' | 'student') => void
+  onRegistrationComplete: (role: 'teacher' | 'student' | 'admin') => void
 }
 
 export function UserRegistration({ onRegistrationComplete }: UserRegistrationProps) {
   const { publicKey } = useWallet()
   const { registerUser, loading, currentUser } = useUniGrading()
   const [username, setUsername] = useState('')
-  const [selectedRole, setSelectedRole] = useState<'teacher' | 'student'>('student')
+  const [selectedRole, setSelectedRole] = useState<'teacher' | 'student' | 'admin'>('student')
 
   const handleRegister = async () => {
     if (!publicKey) {
@@ -28,7 +28,8 @@ export function UserRegistration({ onRegistrationComplete }: UserRegistrationPro
 
     try {
       // Convert role to match the hook's expected format
-      const role = selectedRole === 'teacher' ? 'Teacher' : 'Student'
+      const role = selectedRole === 'teacher' ? 'Teacher' :
+                   selectedRole === 'student' ? 'Student' : 'Admin'
       await registerUser(username, role)
       onRegistrationComplete(selectedRole)
     } catch (error) {
@@ -85,6 +86,17 @@ export function UserRegistration({ onRegistrationComplete }: UserRegistrationPro
                 className="mr-2"
               />
               <span>Teacher</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="role"
+                value="admin"
+                checked={selectedRole === 'admin'}
+                onChange={(e) => setSelectedRole(e.target.value as 'admin')}
+                className="mr-2"
+              />
+              <span>Admin</span>
             </label>
           </div>
         </div>

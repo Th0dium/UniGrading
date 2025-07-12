@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 interface UserData {
   walletAddress: string
   username: string
-  role: 'Teacher' | 'Student'
+  role: 'Teacher' | 'Student' | 'Admin'
   createdAt: number
   isActive: boolean
 }
