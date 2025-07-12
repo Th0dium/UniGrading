@@ -32,10 +32,13 @@ export function UsersList() {
   }, [])
 
   const loadData = () => {
-    const allUsers = JSON.parse(localStorage.getItem('all_users') || '[]')
-    const allClassrooms = JSON.parse(localStorage.getItem('all_classrooms') || '[]')
-    setUsers(allUsers)
-    setClassrooms(allClassrooms)
+    // Check if localStorage is available (client-side only)
+    if (typeof window !== 'undefined') {
+      const allUsers = JSON.parse(localStorage.getItem('all_users') || '[]')
+      const allClassrooms = JSON.parse(localStorage.getItem('all_classrooms') || '[]')
+      setUsers(allUsers)
+      setClassrooms(allClassrooms)
+    }
   }
 
   const filteredStudents = users.filter(user => 

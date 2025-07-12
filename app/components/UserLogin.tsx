@@ -71,9 +71,16 @@ export function UserLogin({ onLoginComplete }: UserLoginProps) {
     )
   }
 
-  // Check if user exists
-  const userExists = publicKey ? !!localStorage.getItem(`user_${publicKey.toString()}`) : false
-  const userData = userExists && publicKey ? JSON.parse(localStorage.getItem(`user_${publicKey.toString()}`) || '{}') : null
+  // Check if user exists (with error handling)
+  const userExists = publicKey && typeof window !== 'undefined' ? !!localStorage.getItem(`user_${publicKey.toString()}`) : false
+  const userData = userExists && publicKey ? (() => {
+    try {
+      return JSON.parse(localStorage.getItem(`user_${publicKey.toString()}`) || '{}')
+    } catch (error) {
+      console.error('Error parsing user data:', error)
+      return null
+    }
+  })() : null
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">

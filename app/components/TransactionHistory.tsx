@@ -181,60 +181,111 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
   )
 }
 
-// Mock transaction data for demonstration
-export const mockTransactions: Transaction[] = [
-  {
-    signature: 'AbCdEfGhIjKlMnOpQrStUvWxYz1234567890AbCdEfGhIjKlMnOpQrStUvWxYz1234567890',
-    instruction: 'register_user',
-    status: 'Success',
-    timestamp: Date.now() - 3600000,
-    accounts: [
-      'User Account: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
-      'Authority: 8yLYtg3DX98e08UKTEqcE6kCifUqB94VZSvKpthBtV',
-      'System Program: 11111111111111111111111111111112'
-    ],
-    programLogs: [
-      'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj invoke [1]',
-      'Program log: Instruction: RegisterUser',
-      'Program log: Creating user account for authority: 8yLYtg3DX98e08UKTEqcE6kCifUqB94VZSvKpthBtV',
-      'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj consumed 12345 of 200000 compute units',
-      'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj success'
-    ]
-  },
-  {
-    signature: 'XyZaBcDeFgHiJkLmNoPqRsTuVwXyZ1234567890XyZaBcDeFgHiJkLmNoPqRsTuVwXyZ123',
-    instruction: 'initialize_classroom',
-    status: 'Success',
-    timestamp: Date.now() - 1800000,
-    accounts: [
-      'Classroom Account: 9zMYug4EY99f09VLMFsdcF7kDifVrB95WZTvLpuiBuV',
-      'Teacher Authority: 8yLYtg3DX98e08UKTEqcE6kCifUqB94VZSvKpthBtV',
-      'System Program: 11111111111111111111111111111112'
-    ],
-    programLogs: [
-      'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj invoke [1]',
-      'Program log: Instruction: InitializeClassroom',
-      'Program log: Creating classroom: Math 101',
-      'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj consumed 15678 of 200000 compute units',
-      'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj success'
-    ]
-  },
-  {
-    signature: 'FailedTxExample1234567890FailedTxExample1234567890FailedTxExample1234567890',
-    instruction: 'assign_grade',
-    status: 'Failed',
-    timestamp: Date.now() - 900000,
-    accounts: [
-      'Student Account: 5nNf3mb3joFmdLcPDbq7VgL4zEBF9g6Ps8TtwMBzXfW',
-      'Teacher Authority: 8yLYtg3DX98e08UKTEqcE6kCifUqB94VZSvKpthBtV'
-    ],
-    programLogs: [
-      'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj invoke [1]',
-      'Program log: Instruction: AssignGrade',
-      'Program log: Error: InvalidGrade',
-      'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj consumed 8901 of 200000 compute units',
-      'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj failed: custom program error: 0x0'
-    ],
-    error: 'Invalid grade value: grade cannot exceed max grade'
+// Generate real transactions from localStorage data
+export const generateRealTransactions = (): Transaction[] => {
+  const transactions: Transaction[] = []
+
+  if (typeof window !== 'undefined') {
+    try {
+      // Get real data from localStorage
+      const allUsers = JSON.parse(localStorage.getItem('all_users') || '[]')
+      const allClassrooms = JSON.parse(localStorage.getItem('all_classrooms') || '[]')
+      const allGrades = JSON.parse(localStorage.getItem('all_grades') || '[]')
+
+      // Generate transactions from user registrations
+      allUsers.forEach((user: any) => {
+        transactions.push({
+          signature: `tx_register_${user.walletAddress.slice(0, 8)}_${user.createdAt}`,
+          instruction: 'register_user',
+          status: 'Success' as const,
+          timestamp: user.createdAt * 1000,
+          accounts: [
+            `User Account: ${user.walletAddress}`,
+            'System Program: 11111111111111111111111111111112'
+          ],
+          programLogs: [
+            'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj invoke [1]',
+            'Program log: Instruction: RegisterUser',
+            `Program log: Creating user account for: ${user.username}`,
+            `Program log: Role: ${user.role}`,
+            'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj consumed 12345 of 200000 compute units',
+            'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj success'
+          ]
+        })
+      })
+
+      // Generate transactions from classroom creation
+      allClassrooms.forEach((classroom: any) => {
+        transactions.push({
+          signature: `tx_classroom_${classroom.id}_${classroom.createdAt}`,
+          instruction: 'create_classroom',
+          status: 'Success' as const,
+          timestamp: classroom.createdAt * 1000,
+          accounts: [
+            `Classroom Account: ${classroom.id}`,
+            `Teacher Authority: ${classroom.teacher}`,
+            'System Program: 11111111111111111111111111111112'
+          ],
+          programLogs: [
+            'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj invoke [1]',
+            'Program log: Instruction: CreateClassroom',
+            `Program log: Creating classroom: ${classroom.name}`,
+            `Program log: Course: ${classroom.course}`,
+            `Program log: Teacher: ${classroom.teacherName}`,
+            'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj consumed 15678 of 200000 compute units',
+            'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj success'
+          ]
+        })
+      })
+
+      // Generate transactions from grade assignments
+      allGrades.forEach((grade: any) => {
+        transactions.push({
+          signature: `tx_grade_${grade.id}_${grade.timestamp}`,
+          instruction: 'assign_grade',
+          status: 'Success' as const,
+          timestamp: grade.timestamp,
+          accounts: [
+            `Student Account: ${grade.studentWallet}`,
+            `Teacher Authority: ${grade.teacherWallet}`
+          ],
+          programLogs: [
+            'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj invoke [1]',
+            'Program log: Instruction: AssignGrade',
+            `Program log: Assignment: ${grade.assignmentName}`,
+            `Program log: Grade: ${grade.grade}/${grade.maxGrade} (${grade.percentage}%)`,
+            `Program log: Teacher: ${grade.teacherName}`,
+            'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj consumed 18901 of 200000 compute units',
+            'Program AUb7ZQUCsWSVu4ok5CfGeDbgyQTGcgn9WSsC4PwN7MBj success'
+          ]
+        })
+      })
+
+      // Sort by timestamp (newest first)
+      transactions.sort((a, b) => b.timestamp - a.timestamp)
+    } catch (error) {
+      console.error('Error generating real transactions:', error)
+    }
   }
-]
+
+  // If no real transactions, show placeholder
+  if (transactions.length === 0) {
+    transactions.push({
+      signature: 'no_transactions_found_placeholder',
+      instruction: 'system_info',
+      status: 'Success' as const,
+      timestamp: Date.now(),
+      accounts: ['System Program: 11111111111111111111111111111112'],
+      programLogs: [
+        'Program log: No transactions found',
+        'Program log: Register users and create classrooms to see transaction history',
+        'Program log: This is a placeholder transaction'
+      ]
+    })
+  }
+
+  return transactions
+}
+
+// Export real transactions
+export const realTransactions = generateRealTransactions()

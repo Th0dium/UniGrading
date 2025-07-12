@@ -3,12 +3,13 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { WalletContextProvider } from '@/components/WalletContextProvider'
 import { Toaster } from 'react-hot-toast'
+import { CURRENT_VERSION, getFullAppTitle, getVersionDescription } from '@/constants/version'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'UniGrading v1.1 - Blockchain Grade Management',
-  description: 'Decentralized university grading system on Solana - Version 1.1 with Login/Register functionality',
+  title: getFullAppTitle(),
+  description: `Decentralized university grading system on Solana - ${getVersionDescription()}`,
 }
 
 export default function RootLayout({
@@ -33,7 +34,7 @@ export default function RootLayout({
                 </div>
                 <div className="text-sm text-gray-500">
                   <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                    v1.1
+                    {CURRENT_VERSION}
                   </span>
                   <span className="ml-2">Built on Solana</span>
                 </div>

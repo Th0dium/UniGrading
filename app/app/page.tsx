@@ -6,6 +6,7 @@ import { Dashboard } from '@/components/Dashboard'
 import { AuthPage } from '@/components/AuthPage'
 import { WalletButton } from '@/components/WalletButton'
 import { RegistrationDebug } from '@/components/RegistrationDebug'
+import { CURRENT_VERSION } from '@/constants/version'
 import NoSSR from '@/components/NoSSR'
 
 export default function Home() {
@@ -60,7 +61,7 @@ function HomeContent() {
           </h1>
           <div className="flex items-center justify-center mb-6">
             <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-              v1.1
+              {CURRENT_VERSION}
             </span>
           </div>
           <p className="text-xl text-gray-600 mb-8">

@@ -21,7 +21,7 @@ export function RegistrationDebug() {
     wallet: {
       connected,
       publicKey: publicKey?.toString() || 'Not connected',
-      balance: 'N/A (Mock)',
+      balance: 'N/A (Not implemented)',
     },
     registration: {
       isRegistered: !!currentUser,

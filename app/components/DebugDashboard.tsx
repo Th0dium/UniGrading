@@ -4,125 +4,205 @@ import { useState, useEffect } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useUniGrading } from '../hooks/useUniGrading'
 import { AccountInfoTable, ProgramVariablesTable } from './AccountInfoTable'
-import { TransactionHistory, mockTransactions } from './TransactionHistory'
+import { TransactionHistory, generateRealTransactions } from './TransactionHistory'
 import { ProgramStateMonitor } from './ProgramStateMonitor'
 import { UsersList } from './UsersList'
+import { CURRENT_VERSION } from '@/constants/version'
 
 export function DebugDashboard() {
   const { publicKey, connected } = useWallet()
   const { currentUser, loading } = useUniGrading()
   const [activeTab, setActiveTab] = useState<'accounts' | 'variables' | 'program' | 'transactions' | 'users'>('accounts')
+  const [realTimeData, setRealTimeData] = useState({
+    users: [],
+    classrooms: [],
+    grades: []
+  })
 
-  // Mock account data - in real app, this would come from blockchain
-  const mockAccounts = [
-    {
-      accountType: 'User',
-      publicKey: publicKey?.toString() || '11111111111111111111111111111111',
-      fields: [
-        {
-          name: 'authority',
-          type: 'PublicKey',
-          value: publicKey?.toString() || '11111111111111111111111111111111',
-          description: 'The wallet address that owns this user account'
-        },
-        {
-          name: 'username',
-          type: 'String',
-          value: currentUser?.username || 'Not set',
-          description: 'Display name for the user'
-        },
-        {
-          name: 'role',
-          type: 'UserRole',
-          value: currentUser?.role || 'Student',
-          description: 'User role: Teacher or Student'
-        },
-        {
-          name: 'created_at',
-          type: 'i64',
-          value: currentUser?.createdAt || Date.now() / 1000,
-          description: 'Unix timestamp when account was created'
-        },
-        {
-          name: 'is_active',
-          type: 'bool',
-          value: currentUser?.isActive ?? true,
-          description: 'Whether the user account is active'
+  // Load real data
+  useEffect(() => {
+    const loadRealData = () => {
+      // Check if localStorage is available (client-side only)
+      if (typeof window !== 'undefined') {
+        try {
+          const users = JSON.parse(localStorage.getItem('all_users') || '[]')
+          const classrooms = JSON.parse(localStorage.getItem('all_classrooms') || '[]')
+          const grades = JSON.parse(localStorage.getItem('all_grades') || '[]')
+          setRealTimeData({ users, classrooms, grades })
+        } catch (error) {
+          console.error('Error loading data from localStorage:', error)
+          setRealTimeData({ users: [], classrooms: [], grades: [] })
         }
-      ]
-    },
-    {
-      accountType: 'Classroom',
-      publicKey: 'ClassroomAccount1111111111111111111111',
-      fields: [
-        {
-          name: 'name',
-          type: 'String',
-          value: 'Math 101',
-          description: 'Name of the classroom'
-        },
-        {
-          name: 'course',
-          type: 'String',
-          value: 'Mathematics',
-          description: 'Course subject'
-        },
-        {
-          name: 'teacher',
-          type: 'PublicKey',
-          value: 'TeacherPublicKey111111111111111111111',
-          description: 'Public key of the teacher who owns this classroom'
-        },
-        {
-          name: 'students',
-          type: 'Vec<StudentRef>',
-          value: [],
-          description: 'List of students enrolled in this classroom'
-        }
-      ]
-    },
-    {
-      accountType: 'Student',
-      publicKey: 'StudentAccount111111111111111111111111',
-      fields: [
-        {
-          name: 'id',
-          type: 'String',
-          value: 'STU001',
-          description: 'Student ID number'
-        },
-        {
-          name: 'name',
-          type: 'String',
-          value: 'No students enrolled',
-          description: 'Student full name'
-        },
-        {
-          name: 'classroom',
-          type: 'PublicKey',
-          value: 'ClassroomAccount1111111111111111111111',
-          description: 'Reference to the classroom this student belongs to'
-        },
-        {
-          name: 'grades',
-          type: 'Vec<Grade>',
-          value: [
-            {
-              assignment_name: 'Midterm Exam',
-              grade: 85,
-              max_grade: 100,
-              timestamp: Date.now() / 1000,
-              graded_by: 'TeacherPublicKey111111111111111111111'
-            }
-          ],
-          description: 'List of grades for this student'
-        }
-      ]
+      }
     }
-  ]
 
-  // Mock program variables
-  const mockVariables = [
+    loadRealData()
+    // Refresh every 10 seconds
+    const interval = setInterval(loadRealData, 10000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Generate real accounts from localStorage data
+  const generateRealAccounts = () => {
+    const accounts = []
+
+    // Current User Account
+    if (currentUser && publicKey) {
+      accounts.push({
+        accountType: 'User (Current)',
+        publicKey: publicKey.toString(),
+        fields: [
+          {
+            name: 'username',
+            type: 'String',
+            value: currentUser.username,
+            description: 'User display name'
+          },
+          {
+            name: 'authority',
+            type: 'PublicKey',
+            value: currentUser.authority.toString(),
+            description: 'Wallet public key that owns this account'
+          },
+          {
+            name: 'role',
+            type: 'UserRole',
+            value: currentUser.role,
+            description: 'User role: Teacher or Student'
+          },
+          {
+            name: 'created_at',
+            type: 'i64',
+            value: currentUser.createdAt,
+            description: 'Unix timestamp when account was created'
+          },
+          {
+            name: 'is_active',
+            type: 'bool',
+            value: currentUser.isActive,
+            description: 'Whether the user account is active'
+          }
+        ]
+      })
+    }
+
+    // Real Classrooms from localStorage
+    const allClassrooms = realTimeData.classrooms
+    if (allClassrooms.length > 0) {
+      allClassrooms.slice(0, 2).forEach((classroom: any, index: number) => {
+        accounts.push({
+          accountType: `Classroom ${index + 1}`,
+          publicKey: classroom.id,
+          fields: [
+            {
+              name: 'name',
+              type: 'String',
+              value: classroom.name,
+              description: 'Name of the classroom'
+            },
+            {
+              name: 'course',
+              type: 'String',
+              value: classroom.course,
+              description: 'Course subject'
+            },
+            {
+              name: 'teacher',
+              type: 'PublicKey',
+              value: classroom.teacher,
+              description: 'Public key of the teacher who owns this classroom'
+            },
+            {
+              name: 'teacher_name',
+              type: 'String',
+              value: classroom.teacherName,
+              description: 'Name of the teacher'
+            },
+            {
+              name: 'students',
+              type: 'Vec<StudentRef>',
+              value: classroom.students || [],
+              description: 'List of students enrolled in this classroom'
+            },
+            {
+              name: 'created_at',
+              type: 'i64',
+              value: classroom.createdAt,
+              description: 'Unix timestamp when classroom was created'
+            }
+          ]
+        })
+      })
+    }
+
+    // Real Students from localStorage
+    const allStudents = realTimeData.users.filter((user: any) => user.role === 'Student')
+    if (allStudents.length > 0) {
+      allStudents.slice(0, 2).forEach((student: any, index: number) => {
+        const studentGrades = realTimeData.grades.filter((grade: any) => grade.studentWallet === student.walletAddress)
+
+        accounts.push({
+          accountType: `Student ${index + 1}`,
+          publicKey: student.walletAddress,
+          fields: [
+            {
+              name: 'username',
+              type: 'String',
+              value: student.username,
+              description: 'Student username'
+            },
+            {
+              name: 'wallet_address',
+              type: 'PublicKey',
+              value: student.walletAddress,
+              description: 'Student wallet address'
+            },
+            {
+              name: 'role',
+              type: 'String',
+              value: student.role,
+              description: 'User role'
+            },
+            {
+              name: 'created_at',
+              type: 'i64',
+              value: student.createdAt,
+              description: 'Unix timestamp when account was created'
+            },
+            {
+              name: 'grades_count',
+              type: 'u32',
+              value: studentGrades.length,
+              description: 'Number of grades assigned to this student'
+            }
+          ]
+        })
+      })
+    }
+
+    // If no real data, show placeholder
+    if (accounts.length === 0) {
+      accounts.push({
+        accountType: 'No Accounts',
+        publicKey: 'No real accounts found',
+        fields: [
+          {
+            name: 'message',
+            type: 'String',
+            value: 'No users, classrooms, or students registered yet',
+            description: 'Register users and create classrooms to see real account data'
+          }
+        ]
+      })
+    }
+
+    return accounts
+  }
+
+  const realAccounts = generateRealAccounts()
+
+  // Real program variables with actual data
+  const realVariables = [
     {
       name: 'PROGRAM_ID',
       type: 'PublicKey',
@@ -147,23 +227,65 @@ export function DebugDashboard() {
     {
       name: 'currentUser',
       type: 'User',
-      value: currentUser ? 'Loaded' : 'Not loaded',
+      value: currentUser ? `${currentUser.username} (${currentUser.role})` : 'Not registered',
       scope: 'Local' as const,
-      description: 'Current user account data from blockchain'
+      description: 'Current user account data'
     },
     {
       name: 'loading',
       type: 'bool',
       value: loading,
       scope: 'Local' as const,
-      description: 'Whether any blockchain operation is in progress'
+      description: 'Whether any operation is in progress'
+    },
+    {
+      name: 'total_users',
+      type: 'number',
+      value: realTimeData.users.length,
+      scope: 'Global' as const,
+      description: 'Total number of registered users'
+    },
+    {
+      name: 'total_students',
+      type: 'number',
+      value: realTimeData.users.filter((user: any) => user.role === 'Student').length,
+      scope: 'Global' as const,
+      description: 'Total number of students'
+    },
+    {
+      name: 'total_teachers',
+      type: 'number',
+      value: realTimeData.users.filter((user: any) => user.role === 'Teacher').length,
+      scope: 'Global' as const,
+      description: 'Total number of teachers'
+    },
+    {
+      name: 'total_classrooms',
+      type: 'number',
+      value: realTimeData.classrooms.length,
+      scope: 'Global' as const,
+      description: 'Total number of classrooms created'
+    },
+    {
+      name: 'total_grades',
+      type: 'number',
+      value: realTimeData.grades.length,
+      scope: 'Global' as const,
+      description: 'Total number of grades recorded'
     },
     {
       name: 'app_version',
       type: 'string',
-      value: 'v1.1',
+      value: CURRENT_VERSION,
       scope: 'Global' as const,
       description: 'UniGrading application version'
+    },
+    {
+      name: 'last_updated',
+      type: 'timestamp',
+      value: new Date().toISOString(),
+      scope: 'Local' as const,
+      description: 'Last time data was refreshed'
     }
   ]
 
@@ -231,9 +353,9 @@ export function DebugDashboard() {
         <div className="p-6">
           {activeTab === 'accounts' && (
             <div className="space-y-6">
-              <AccountInfoTable 
-                accounts={mockAccounts} 
-                title="Blockchain Account Data"
+              <AccountInfoTable
+                accounts={realAccounts}
+                title="Real Account Data"
               />
               
               {/* Connection Status */}
@@ -258,9 +380,9 @@ export function DebugDashboard() {
           )}
 
           {activeTab === 'variables' && (
-            <ProgramVariablesTable 
-              variables={mockVariables} 
-              title="Runtime Variables"
+            <ProgramVariablesTable
+              variables={realVariables}
+              title="Real-time Variables"
             />
           )}
 
@@ -308,7 +430,7 @@ export function DebugDashboard() {
           )}
 
           {activeTab === 'transactions' && (
-            <TransactionHistory transactions={mockTransactions} />
+            <TransactionHistory transactions={generateRealTransactions()} />
           )}
 
           {activeTab === 'users' && (

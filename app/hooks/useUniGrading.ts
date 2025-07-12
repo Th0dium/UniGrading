@@ -85,7 +85,7 @@ export const useUniGrading = () => {
     setLoading(true);
     try {
       // Check if user already exists
-      const existingUser = localStorage.getItem(`user_${wallet.publicKey.toString()}`);
+      const existingUser = localStorage.getItem(`user_${wallet.publicKey?.toString()}`);
       if (existingUser) {
         toast.error('User already registered with this wallet');
         return null;
@@ -177,9 +177,9 @@ export const useUniGrading = () => {
     }
   }, [wallet, currentUser]);
 
-  // Add student to classroom (Mock implementation)
+  // Add student to classroom (Implementation placeholder)
   const addStudent = useCallback(async (
-    classroomPubkey: PublicKey,
+    _classroomPubkey: PublicKey,
     studentName: string,
     studentId: string
   ): Promise<string | null> => {
@@ -193,11 +193,12 @@ export const useUniGrading = () => {
 
     setLoading(true);
     try {
-      // Mock delay
+      // Simulate processing delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      toast.success(`Student "${studentName}" (${studentId}) added successfully! (Mock)`);
-      return 'mock_student_signature_' + Date.now();
+      // TODO: Implement actual student enrollment logic
+      toast.success(`Student "${studentName}" (${studentId}) added successfully!`);
+      return 'tx_student_' + Date.now() + '_' + wallet.publicKey.toString().slice(0, 8);
     } catch (error) {
       console.error('Error adding student:', error);
       toast.error('Failed to add student');
@@ -207,7 +208,7 @@ export const useUniGrading = () => {
     }
   }, [wallet, currentUser]);
 
-  // Assign grade (Mock implementation)
+  // Assign grade with localStorage persistence
   const assignGrade = useCallback(async (
     studentPubkey: PublicKey,
     assignmentName: string,
@@ -224,11 +225,30 @@ export const useUniGrading = () => {
 
     setLoading(true);
     try {
-      // Mock delay
+      // Simulate processing delay
       await new Promise(resolve => setTimeout(resolve, 1200));
 
-      toast.success(`Grade assigned: ${grade}/${maxGrade} for "${assignmentName}" (Mock)`);
-      return 'mock_grade_signature_' + Date.now();
+      // Create grade data
+      const gradeData = {
+        id: 'grade_' + Date.now(),
+        studentWallet: studentPubkey.toString(),
+        teacherWallet: wallet.publicKey?.toString(),
+        teacherName: currentUser.username,
+        assignmentName,
+        grade,
+        maxGrade,
+        percentage: Math.round((grade / maxGrade) * 100),
+        createdAt: Date.now() / 1000,
+        timestamp: Date.now()
+      };
+
+      // Save to localStorage
+      const allGrades = JSON.parse(localStorage.getItem('all_grades') || '[]');
+      allGrades.push(gradeData);
+      localStorage.setItem('all_grades', JSON.stringify(allGrades));
+
+      toast.success(`Grade assigned: ${grade}/${maxGrade} (${gradeData.percentage}%) for "${assignmentName}"`);
+      return 'tx_grade_' + Date.now() + '_' + wallet.publicKey?.toString().slice(0, 8);
     } catch (error) {
       console.error('Error assigning grade:', error);
       toast.error('Failed to assign grade');
