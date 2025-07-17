@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { WalletContextProvider } from '@/components/WalletContextProvider'
+import { ImprovementSummary } from '@/components/ImprovementSummary'
 import { Toaster } from 'react-hot-toast'
 import { CURRENT_VERSION, getFullAppTitle, getVersionDescription } from '@/constants/version'
 
@@ -42,6 +43,7 @@ export default function RootLayout({
             </footer>
           </div>
           <Toaster position="top-right" />
+          <ImprovementSummary />
         </WalletContextProvider>
       </body>
     </html>

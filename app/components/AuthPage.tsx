@@ -1,98 +1,121 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { UserRegistration } from './UserRegistration'
-import { UserLogin } from './UserLogin'
+import toast from 'react-hot-toast'
 
 interface AuthPageProps {
   onAuthComplete: (role: 'teacher' | 'student' | 'admin') => void
 }
 
 export function AuthPage({ onAuthComplete }: AuthPageProps) {
-  const { publicKey } = useWallet()
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
+  const { publicKey, connected } = useWallet()
+  const [isAutoLoggingIn, setIsAutoLoggingIn] = useState(false)
+  const [showRegistration, setShowRegistration] = useState(false)
 
-  // Check if user exists in localStorage
-  const userExists = publicKey ? !!localStorage.getItem(`user_${publicKey.toString()}`) : false
+  // Auto-login effect when wallet connects
+  useEffect(() => {
+    if (!connected || !publicKey || isAutoLoggingIn) return
 
-  return (
-    <div className="max-w-md mx-auto">
-      {/* Auth Mode Toggle */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="flex items-center justify-center mb-4">
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setAuthMode('login')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                authMode === 'login'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Login
-            </button>
-            <button
-              onClick={() => setAuthMode('register')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                authMode === 'register'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Register
-            </button>
+    const attemptAutoLogin = async () => {
+      try {
+        setIsAutoLoggingIn(true)
+
+        // Check if user exists in localStorage
+        const savedUser = localStorage.getItem(`user_${publicKey.toString()}`)
+
+        if (savedUser) {
+          // Auto-login delay for better UX
+          await new Promise(resolve => setTimeout(resolve, 800))
+
+          const userData = JSON.parse(savedUser)
+
+          // Verify user data integrity
+          if (userData.username && userData.role) {
+            toast.success(`Welcome back, ${userData.username}!`)
+            onAuthComplete(userData.role.toLowerCase() as 'teacher' | 'student' | 'admin')
+            return
+          } else {
+            // Invalid data, remove and show registration
+            localStorage.removeItem(`user_${publicKey.toString()}`)
+            toast.error('Invalid user data found. Please register again.')
+          }
+        }
+
+        // No user found or invalid data - show registration
+        setShowRegistration(true)
+
+      } catch (error) {
+        console.error('Auto-login error:', error)
+        toast.error('Error during auto-login. Please try again.')
+        setShowRegistration(true)
+      } finally {
+        setIsAutoLoggingIn(false)
+      }
+    }
+
+    attemptAutoLogin()
+  }, [connected, publicKey, onAuthComplete, isAutoLoggingIn])
+
+  // Show loading state during auto-login
+  if (isAutoLoggingIn) {
+    return (
+      <div className="max-w-md mx-auto">
+        <div className="bg-white rounded-lg shadow-md p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Checking Account...</h3>
+            <p className="text-gray-600">
+              {publicKey ?
+                `Verifying account for ${publicKey.toString().slice(0, 8)}...${publicKey.toString().slice(-8)}` :
+                'Connecting to wallet...'
+              }
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show registration form if no account found or user explicitly wants to register
+  if (showRegistration) {
+    return (
+      <div className="max-w-md mx-auto">
+        {/* Registration Header */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="text-center">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Create Account</h2>
+            {publicKey && (
+              <div className="mb-4">
+                <p className="text-sm text-gray-600">
+                  Wallet: {publicKey.toString().slice(0, 8)}...{publicKey.toString().slice(-8)}
+                </p>
+                <p className="text-sm text-orange-600 font-medium">
+                  No account found - Please register to continue
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* User Status */}
-        {publicKey && (
-          <div className="text-center mb-4">
-            <p className="text-sm text-gray-600">
-              Wallet: {publicKey.toString().slice(0, 8)}...{publicKey.toString().slice(-8)}
-            </p>
-            <p className={`text-sm font-medium ${userExists ? 'text-green-600' : 'text-orange-600'}`}>
-              {userExists ? 'Account found - You can login' : 'No account found - Please register'}
-            </p>
-          </div>
-        )}
-
-        {/* Auto-suggest based on user existence */}
-        {publicKey && userExists && authMode === 'register' && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-            <p className="text-sm text-blue-800">
-              You already have an account. 
-              <button
-                onClick={() => setAuthMode('login')}
-                className="ml-1 font-medium underline hover:no-underline"
-              >
-                Click here to login instead.
-              </button>
-            </p>
-          </div>
-        )}
-
-        {publicKey && !userExists && authMode === 'login' && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
-            <p className="text-sm text-orange-800">
-              No account found for this wallet. 
-              <button
-                onClick={() => setAuthMode('register')}
-                className="ml-1 font-medium underline hover:no-underline"
-              >
-                Click here to register instead.
-              </button>
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Auth Forms */}
-      {authMode === 'login' ? (
-        <UserLogin onLoginComplete={onAuthComplete} />
-      ) : (
+        {/* Registration Form */}
         <UserRegistration onRegistrationComplete={onAuthComplete} />
-      )}
+      </div>
+    )
+  }
+
+  // Fallback - should not normally reach here due to auto-login
+  return (
+    <div className="max-w-md mx-auto">
+      <div className="bg-white rounded-lg shadow-md p-8">
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Connect Your Wallet</h3>
+          <p className="text-gray-600">
+            Please connect your Solana wallet to continue
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
