@@ -44,13 +44,36 @@ export const useUniGrading = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Check for existing user in localStorage when wallet connects
+  // Auto-check and set user when wallet connects
   useEffect(() => {
     if (wallet.connected && wallet.publicKey && !currentUser) {
-      const savedUser = localStorage.getItem(`user_${wallet.publicKey.toString()}`);
-      if (savedUser) {
-        setCurrentUser(JSON.parse(savedUser));
-      }
+      const checkAndSetUser = async () => {
+        try {
+          const savedUser = localStorage.getItem(`user_${wallet.publicKey.toString()}`);
+          if (savedUser) {
+            const userData = JSON.parse(savedUser);
+            // Validate user data structure
+            if (userData.username && userData.role && userData.authority) {
+              setCurrentUser(userData);
+            } else {
+              // Invalid data, remove it
+              localStorage.removeItem(`user_${wallet.publicKey.toString()}`);
+              console.warn('Invalid user data found and removed');
+            }
+          }
+        } catch (error) {
+          console.error('Error loading user data:', error);
+          // Remove corrupted data
+          if (wallet.publicKey) {
+            localStorage.removeItem(`user_${wallet.publicKey.toString()}`);
+          }
+        }
+      };
+
+      checkAndSetUser();
+    } else if (!wallet.connected) {
+      // Clear user when wallet disconnects
+      setCurrentUser(null);
     }
   }, [wallet.connected, wallet.publicKey, currentUser]);
 

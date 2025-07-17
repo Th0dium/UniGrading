@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useUniGrading } from '../hooks/useUniGrading'
+import { useAdminData } from '../hooks/useLocalStorageData'
 import { AdminDebugConsole } from './AdminDebugConsole'
 import { AdminUserViewer } from './AdminUserViewer'
 import { useAdminPermissions } from '../hooks/useAdminPermissions'
@@ -42,6 +43,7 @@ interface GradeData {
 export function AdminDashboard() {
   const { publicKey } = useWallet()
   const { currentUser } = useUniGrading()
+  const { data, metrics, loading, error, refresh } = useAdminData()
   const {
     canAccessDebugConsole,
     canViewUserDetails,
@@ -50,45 +52,9 @@ export function AdminDashboard() {
     getRoleDisplay
   } = useAdminPermissions()
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'classrooms' | 'grades' | 'accounts' | 'debug'>('overview')
-  const [users, setUsers] = useState<UserData[]>([])
-  const [classrooms, setClassrooms] = useState<ClassroomData[]>([])
-  const [grades, setGrades] = useState<GradeData[]>([])
 
-  // Load data
-  useEffect(() => {
-    loadData()
-    // Refresh every 10 seconds
-    const interval = setInterval(loadData, 10000)
-    return () => clearInterval(interval)
-  }, [])
-
-  const loadData = () => {
-    if (typeof window !== 'undefined') {
-      try {
-        const allUsers = JSON.parse(localStorage.getItem('all_users') || '[]')
-        const allClassrooms = JSON.parse(localStorage.getItem('all_classrooms') || '[]')
-        const allGrades = JSON.parse(localStorage.getItem('all_grades') || '[]')
-        
-        setUsers(allUsers)
-        setClassrooms(allClassrooms)
-        setGrades(allGrades)
-      } catch (error) {
-        console.error('Error loading admin data:', error)
-      }
-    }
-  }
-
-  // Statistics
-  const stats = {
-    totalUsers: users.length,
-    totalTeachers: users.filter(u => u.role === 'Teacher').length,
-    totalStudents: users.filter(u => u.role === 'Student').length,
-    totalAdmins: users.filter(u => u.role === 'Admin').length,
-    totalClassrooms: classrooms.length,
-    totalGrades: grades.length,
-    activeUsers: users.filter(u => u.isActive).length,
-    recentRegistrations: users.filter(u => Date.now() - (u.createdAt * 1000) < 24 * 60 * 60 * 1000).length
-  }
+  // Use metrics from the custom hook
+  const stats = metrics
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📊' },
@@ -137,14 +103,51 @@ export function AdminDashboard() {
       </div>
 
       {/* Content */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        {activeTab === 'overview' && (
+      <div className="bg-white rounded-lg shadow-md p-4">
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading admin data...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <div className="text-red-600 text-xl mr-3">⚠️</div>
+              <div>
+                <h3 className="font-medium text-red-800">Error Loading Data</h3>
+                <p className="text-red-700 text-sm">{error}</p>
+                <button
+                  onClick={refresh}
+                  className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium underline"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!loading && !error && activeTab === 'overview' && (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900">System Overview</h2>
-            
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">System Overview</h2>
+              <button
+                onClick={refresh}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                🔄 Refresh Data
+              </button>
+            </div>
+
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <div className="flex items-center">
                   <div className="text-blue-600 text-2xl mr-3">👥</div>
                   <div>
@@ -154,7 +157,7 @@ export function AdminDashboard() {
                 </div>
               </div>
               
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                 <div className="flex items-center">
                   <div className="text-green-600 text-2xl mr-3">🏫</div>
                   <div>
@@ -163,8 +166,8 @@ export function AdminDashboard() {
                   </div>
                 </div>
               </div>
-              
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                 <div className="flex items-center">
                   <div className="text-yellow-600 text-2xl mr-3">📝</div>
                   <div>
@@ -173,8 +176,8 @@ export function AdminDashboard() {
                   </div>
                 </div>
               </div>
-              
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
                 <div className="flex items-center">
                   <div className="text-purple-600 text-2xl mr-3">⚡</div>
                   <div>
@@ -186,20 +189,20 @@ export function AdminDashboard() {
             </div>
 
             {/* Role Distribution */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                 <h3 className="font-medium text-gray-900 mb-2">Teachers</h3>
                 <p className="text-3xl font-bold text-gray-900">{stats.totalTeachers}</p>
                 <p className="text-sm text-gray-600">{((stats.totalTeachers / stats.totalUsers) * 100 || 0).toFixed(1)}% of users</p>
               </div>
-              
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                 <h3 className="font-medium text-gray-900 mb-2">Students</h3>
                 <p className="text-3xl font-bold text-gray-900">{stats.totalStudents}</p>
                 <p className="text-sm text-gray-600">{((stats.totalStudents / stats.totalUsers) * 100 || 0).toFixed(1)}% of users</p>
               </div>
-              
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                 <h3 className="font-medium text-gray-900 mb-2">Admins</h3>
                 <p className="text-3xl font-bold text-gray-900">{stats.totalAdmins}</p>
                 <p className="text-sm text-gray-600">{((stats.totalAdmins / stats.totalUsers) * 100 || 0).toFixed(1)}% of users</p>
@@ -223,20 +226,20 @@ export function AdminDashboard() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wallet</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registered</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wallet</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registered</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map((user, index) => (
+                  {data.users.map((user: any, index: number) => (
                     <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{user.username}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           user.role === 'Admin' ? 'bg-purple-100 text-purple-800' :
                           user.role === 'Teacher' ? 'bg-blue-100 text-blue-800' :
@@ -245,15 +248,15 @@ export function AdminDashboard() {
                           {user.role}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-sm text-gray-900 font-mono">
                           {user.walletAddress.slice(0, 8)}...{user.walletAddress.slice(-8)}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                         {new Date(user.createdAt * 1000).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
@@ -273,7 +276,7 @@ export function AdminDashboard() {
             <h2 className="text-xl font-semibold text-gray-900">Classroom Management</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {classrooms.map((classroom, index) => (
+              {data.classrooms.map((classroom: any, index: number) => (
                 <div key={index} className="border border-gray-200 rounded-lg p-4">
                   <h3 className="font-semibold text-gray-900">{classroom.name}</h3>
                   <p className="text-sm text-gray-600">{classroom.course}</p>

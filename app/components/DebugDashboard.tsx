@@ -6,13 +6,14 @@ import { useUniGrading } from '../hooks/useUniGrading'
 import { AccountInfoTable, ProgramVariablesTable } from './AccountInfoTable'
 import { TransactionHistory, generateRealTransactions } from './TransactionHistory'
 import { ProgramStateMonitor } from './ProgramStateMonitor'
+import { ProgramWalletInfo } from './ProgramWalletInfo'
 import { UsersList } from './UsersList'
 import { CURRENT_VERSION } from '@/constants/version'
 
 export function DebugDashboard() {
   const { publicKey, connected } = useWallet()
   const { currentUser, loading } = useUniGrading()
-  const [activeTab, setActiveTab] = useState<'accounts' | 'variables' | 'program' | 'transactions' | 'users'>('accounts')
+  const [activeTab, setActiveTab] = useState<'accounts' | 'variables' | 'program' | 'transactions' | 'users' | 'wallet'>('accounts')
   const [realTimeData, setRealTimeData] = useState({
     users: [],
     classrooms: [],
@@ -322,7 +323,8 @@ export function DebugDashboard() {
     { id: 'variables', label: 'Program Variables', icon: 'VAR' },
     { id: 'program', label: 'Program Info', icon: 'PRG' },
     { id: 'transactions', label: 'Transaction History', icon: 'TXN' },
-    { id: 'users', label: 'Users & Classes', icon: 'USR' }
+    { id: 'users', label: 'Users & Classes', icon: 'USR' },
+    { id: 'wallet', label: 'Program Wallet', icon: 'WAL' }
   ]
 
   return (
@@ -336,8 +338,8 @@ export function DebugDashboard() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as 'accounts' | 'variables' | 'program' | 'transactions' | 'users')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                onClick={() => setActiveTab(tab.id as 'accounts' | 'variables' | 'program' | 'transactions' | 'users' | 'wallet')}
+                className={`py-3 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
                     ? 'border-primary-500 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -350,7 +352,7 @@ export function DebugDashboard() {
           </nav>
         </div>
 
-        <div className="p-6">
+        <div className="p-4">
           {activeTab === 'accounts' && (
             <div className="space-y-6">
               <AccountInfoTable
@@ -435,6 +437,10 @@ export function DebugDashboard() {
 
           {activeTab === 'users' && (
             <UsersList />
+          )}
+
+          {activeTab === 'wallet' && (
+            <ProgramWalletInfo />
           )}
         </div>
       </div>

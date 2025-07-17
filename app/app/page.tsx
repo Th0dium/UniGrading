@@ -19,36 +19,47 @@ export default function Home() {
 
 function HomeContent() {
   const { connected, publicKey } = useWallet()
-  const [isRegistered, setIsRegistered] = useState(false)
   const [userRole, setUserRole] = useState<'teacher' | 'student' | 'admin' | null>(null)
+  const [isCheckingUser, setIsCheckingUser] = useState(false)
 
   useEffect(() => {
-    // Check if user is registered
-    // This would typically involve checking the blockchain for user account
     if (connected && publicKey) {
-      // For now, we'll simulate this check
-      // In a real app, you'd query the blockchain here
       checkUserRegistration()
+    } else {
+      setUserRole(null)
     }
   }, [connected, publicKey])
 
   const checkUserRegistration = async () => {
-    if (!publicKey) return
+    if (!publicKey || isCheckingUser) return
 
-    // Check if user exists in localStorage
-    const savedUser = localStorage.getItem(`user_${publicKey.toString()}`)
-    if (savedUser) {
-      const userData = JSON.parse(savedUser)
-      setIsRegistered(true)
-      setUserRole(userData.role.toLowerCase() as 'teacher' | 'student' | 'admin')
-    } else {
-      setIsRegistered(false)
+    setIsCheckingUser(true)
+    try {
+      // Small delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 300))
+
+      const savedUser = localStorage.getItem(`user_${publicKey.toString()}`)
+      if (savedUser) {
+        const userData = JSON.parse(savedUser)
+        if (userData.username && userData.role) {
+          setUserRole(userData.role.toLowerCase() as 'teacher' | 'student' | 'admin')
+        } else {
+          // Invalid data, remove it
+          localStorage.removeItem(`user_${publicKey.toString()}`)
+          setUserRole(null)
+        }
+      } else {
+        setUserRole(null)
+      }
+    } catch (error) {
+      console.error('Error checking user registration:', error)
       setUserRole(null)
+    } finally {
+      setIsCheckingUser(false)
     }
   }
 
-  const handleRegistrationComplete = (role: 'teacher' | 'student' | 'admin') => {
-    setIsRegistered(true)
+  const handleAuthComplete = (role: 'teacher' | 'student' | 'admin') => {
     setUserRole(role)
   }
 
@@ -76,7 +87,23 @@ function HomeContent() {
     )
   }
 
-  if (!isRegistered) {
+  // Show loading state while checking user
+  if (connected && isCheckingUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Checking Account...</h2>
+          <p className="text-gray-600">
+            Verifying registration for {publicKey?.toString().slice(0, 8)}...{publicKey?.toString().slice(-8)}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show auth page if user is not registered
+  if (connected && !userRole) {
     return (
       <div className="min-h-screen p-8">
         <div className="max-w-4xl mx-auto">
@@ -84,7 +111,7 @@ function HomeContent() {
             <h1 className="text-3xl font-bold text-gray-900">UniGrading</h1>
             <WalletButton />
           </div>
-          <AuthPage onAuthComplete={handleRegistrationComplete} />
+          <AuthPage onAuthComplete={handleAuthComplete} />
         </div>
         <RegistrationDebug />
       </div>
